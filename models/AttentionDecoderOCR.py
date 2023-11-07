@@ -4,10 +4,8 @@ sys.path.append("../")
 import math
 import torch
 import torch.nn as nn
-from .MyIncept import MyIncept
-import torchvision.models as models
-
-from constants import IMG_H, IMG_W, SOS, EOS, PAD, CHAR2IDX, MAX_LEN, DEVICE
+from .FeatureExtractionCNN import FeatureExtractionCNN
+from constants import IMG_H, IMG_W, SOS, CHAR2IDX, MAX_LEN, DEVICE
 
 class Attention(nn.Module):
     def __init__(self, hidden_size):
@@ -101,7 +99,7 @@ class PositionEmbedding(nn.Module):
 class OCR(nn.Module):
     def __init__(self, hidden=256):
         super(OCR, self).__init__()
-        self.cnn = MyIncept().to(DEVICE)
+        self.cnn = FeatureExtractionCNN().to(DEVICE)
         # get the shape of feature output
         b, fc, fh, fw = self.cnn(torch.randn(1, 3, IMG_H, IMG_W).to(DEVICE)).shape
         # vertical position embedding

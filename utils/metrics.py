@@ -4,7 +4,7 @@ import torch.nn.functional as F
 
 from constants import DEVICE, PAD, CHAR2IDX
 def CTC_loss(y_pred, y_true):
-    ctc_loss_fn = nn.CTCLoss(blank=CHAR2IDX[PAD]).to(DEVICE)
+    ctc_loss_fn = nn.CTCLoss(blank=CHAR2IDX[PAD], reduction='sum').to(DEVICE)
 
     y_pred = F.log_softmax(y_pred, dim=-1)
 
@@ -24,6 +24,8 @@ def CTC_loss(y_pred, y_true):
       target_lengths
     )
 
+    loss /= y_true.shape[0] # normalize loss
+    
     assert loss.item() >= 0.0
 
     return loss

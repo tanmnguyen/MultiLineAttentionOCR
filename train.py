@@ -7,16 +7,27 @@ from utils.train_eval import train, valid
 from utils.metrics import CTC_loss, CTC_accuracy_fn
 from torch.utils.data import random_split, DataLoader
 
-from constants import DEVICE
+from constants import DEVICE, BATCH_SIZE
 from dataset.LicensePlateDataset import LicensePlateDataset
 
 def main(args):
     model = CRNN().to(DEVICE)
     dataset = LicensePlateDataset(args.data)
-    train_ds, valid_ds = random_split(dataset, [0.8, 0.2])
+    train_ds, valid_ds = random_split(dataset, [0.9, 0.1])
 
-    train_dataloader = DataLoader(train_ds, batch_size=16, collate_fn=collate_fn, shuffle=True)
-    valid_dataloader = DataLoader(valid_ds, batch_size=16, collate_fn=collate_fn, shuffle=False)
+    train_dataloader = DataLoader(
+        train_ds, 
+        batch_size=BATCH_SIZE, 
+        collate_fn=collate_fn, 
+        shuffle=True
+    )
+
+    valid_dataloader = DataLoader(
+        valid_ds, 
+        batch_size=BATCH_SIZE, 
+        collate_fn=collate_fn, 
+        shuffle=False
+    )
 
     optimizer = optim.Adam(model.parameters(), lr=0.001, weight_decay=1e-3)
     lr_scheduler = optim.lr_scheduler.ReduceLROnPlateau(optimizer, verbose=True, patience=5)
@@ -39,6 +50,8 @@ def main(args):
 
         lr_scheduler.step(train_history[-1]["epoch_loss"])
 
+        print() 
+
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description='')
 
@@ -50,7 +63,7 @@ if __name__ == "__main__":
     parser.add_argument('-epochs',
                         '--epochs',
                         type=int,
-                        default=50,
+                        default=100,
                         required=False,
                         help="Training epochs")
 
