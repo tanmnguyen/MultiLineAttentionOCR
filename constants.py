@@ -24,4 +24,4 @@ IDX2CHAR = {i : c for i, c in enumerate(lets)}
 BATCH_SIZE = 32
 MAX_LEN = 10
 
-DEVICE = torch.device("cpu")
+DEVICE = torch.device("cpu") if not torch.cuda.is_available() else torch.device("cuda:0")
