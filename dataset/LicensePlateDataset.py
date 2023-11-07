@@ -1,5 +1,6 @@
 import os 
 import cv2 
+import copy
 import zipfile
 import numpy as np
 
@@ -14,7 +15,7 @@ class LicensePlateDataset(Dataset):
         has_file = {}
         for file in self.zipfile.namelist():
             has_file[file] = True
-        
+
         for file in has_file:
             # check image format
             if file.endswith(".jpg") or file.endswith(".png") or file.endswith(".jpeg"):
@@ -32,12 +33,11 @@ class LicensePlateDataset(Dataset):
     def __len__(self):
         assert len(self.img_paths) == len(self.lbls)
         return len(self.img_paths)
-    
+
     def __getitem__(self, idx):
-        img_path, lbl = self.img_paths[idx], self.lbls[idx]
+        img_path, lbl = self.img_paths[idx], copy.copy(self.lbls[idx])
         with self.zipfile.open(img_path) as img_file:
             img = cv2.imdecode(np.frombuffer(img_file.read(), np.uint8), cv2.IMREAD_COLOR)
             img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
 
         return img, lbl
-           

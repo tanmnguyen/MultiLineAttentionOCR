@@ -8,20 +8,19 @@ import torch.nn.functional as F
 from constants import IMG_H, IMG_W, SOS, EOS, PAD, CHAR2IDX
 
 def img_processing(img):
-    img = cv2.resize(img, (IMG_H, IMG_W))
+    img = cv2.resize(img, (IMG_W, IMG_H))
     img = torch.from_numpy(img).permute(2, 0, 1)
-    return img 
+    return img
 
 def lbl_processing(lbl, seq_len):
     lbl = [SOS] + [c for c in lbl] + [EOS]
-    lbl = [CHAR2IDX[char] for char in lbl]
-    lbl = torch.tensor(lbl)
+    lbl = torch.tensor([CHAR2IDX[c] for c in lbl], dtype=torch.int32)
     lbl = torch.nn.functional.pad(lbl, (0, seq_len - len(lbl)), value=CHAR2IDX[PAD])
     return lbl
 
 def collate_fn(batch):
-    seq_len = max([len(lbl) for (_, lbl) in batch]) + 2 # include <SOS> and <EOS>
+    seq_len = max([len(lbl) for (_, lbl) in batch]) + 2 # include SOS and EOS 
     img_batch = torch.stack([img_processing(img) for (img, _) in batch]).to(torch.float32)
-    lbl_batch = torch.stack([lbl_processing(lbl, seq_len) for (_, lbl) in batch]).to(torch.int32)
+    lbl_batch = torch.stack([lbl_processing(lbl.upper(), seq_len) for (_, lbl) in batch]).to(torch.int32)
 
     return img_batch, lbl_batch
