@@ -5,7 +5,7 @@ import cv2
 import torch
 
 import torch.nn.functional as F
-from constants import IMG_H, IMG_W, SOS, EOS, PAD, CHAR2IDX
+from constants import IMG_H, IMG_W, SOS, EOS, PAD, CHAR2IDX, DEVICE
 
 def img_processing(img):
     img = cv2.resize(img, (IMG_W, IMG_H))
@@ -23,4 +23,4 @@ def collate_fn(batch):
     img_batch = torch.stack([img_processing(img) for (img, _) in batch]).to(torch.float32)
     lbl_batch = torch.stack([lbl_processing(lbl.upper(), seq_len) for (_, lbl) in batch]).to(torch.int32)
 
-    return img_batch, lbl_batch
+    return img_batch.to(DEVICE), lbl_batch.to(DEVICE)
