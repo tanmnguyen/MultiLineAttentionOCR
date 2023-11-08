@@ -31,8 +31,7 @@ class LicensePlateDataset(Dataset):
         self.lbls      = lbls
 
     def __len__(self):
-        return 5000
-        assert len(self.img_paths) == len(self.lbls)
+g        assert len(self.img_paths) == len(self.lbls)
         return len(self.img_paths)
 
     def __getitem__(self, idx):
