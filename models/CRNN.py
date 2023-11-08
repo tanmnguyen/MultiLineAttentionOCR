@@ -25,6 +25,8 @@ class CRNN(nn.Module):
         x = x.view(b, fc * fh, fw) # (batch, fc * fh, fw)
         x = x.permute(2, 0, 1) # (fw, batch, fc * fh)
         x, _ = self.rnn1(x) # (fw, batch, hidden * 2)
+        x = nn.Dropout(0.25)(x)
         x, _ = self.rnn2(x) # (fw, batch, hidden * 2)
+        x = nn.Dropout(0.25)(x)
         x = self.fc(x) # (fw, batch, num_classes)
         return x
