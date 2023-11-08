@@ -2,12 +2,18 @@ import torch
 import numpy as np
 from tqdm import tqdm
 from constants import DEVICE
+from models.CRNN import CRNN
 
 def train(model, train_dataloader, optimizer, loss_fn, accuracy_fn, epoch, num_epochs):
+    teacher_forcing_ratio = 0.8 if epoch < 10 else 0.5 if epoch < 30 else 0.3
+
     epoch_loss, ch_acc, sq_acc = 0.0, 0.0, 0.0
     for x_train, y_train in tqdm(train_dataloader, leave=False):
         optimizer.zero_grad()
-        y_pred = model(x_train.to(DEVICE))
+
+        y_pred = model(x_train.to(DEVICE)) if isinstance(model, CRNN) else \
+                 model(x_train.to(DEVICE), y_train.to(DEVICE), teacher_forcing_ratio=teacher_forcing_ratio)
+            
         loss = loss_fn(y_pred, y_train)
 
         loss.backward()
@@ -38,8 +44,12 @@ def train(model, train_dataloader, optimizer, loss_fn, accuracy_fn, epoch, num_e
 def valid(model, valid_dataloader, loss_fn, accuracy_fn, epoch, num_epochs):
     epoch_loss, ch_acc, sq_acc = 0.0, 0.0, 0.0
     for x_train, y_train in tqdm(valid_dataloader, leave=False):
-        y_pred = model(x_train.to(DEVICE))
-        loss = loss_fn(y_pred, y_train)
+        # for the purpose of testing, we will provide y train to the attention decoder model to ensure the 
+        # sequence length is correct. 
+        y_pred = model(x_train.to(DEVICE)) if isinstance(model, CRNN) else \
+                 model(x_train.to(DEVICE), y_train.to(DEVICE), teacher_forcing_ratio=0) 
+        
+        loss = loss_fn(y_pred, y_train) 
 
         with torch.no_grad():
             c_acc, s_acc = accuracy_fn(y_pred, y_train)

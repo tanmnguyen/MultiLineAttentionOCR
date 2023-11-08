@@ -96,9 +96,9 @@ class PositionEmbedding(nn.Module):
     def forward(self, input_):
         return self.emb(input_)
 
-class OCR(nn.Module):
+class AttentionDecoderOCR(nn.Module):
     def __init__(self, hidden=256):
-        super(OCR, self).__init__()
+        super(AttentionDecoderOCR, self).__init__()
         self.cnn = FeatureExtractionCNN().to(DEVICE)
         # get the shape of feature output
         b, fc, fh, fw = self.cnn(torch.randn(1, 3, IMG_H, IMG_W).to(DEVICE)).shape
@@ -139,6 +139,6 @@ class OCR(nn.Module):
         # build embedded features with image features and positional embedding
         x = self.emb_f(x) # (b, fh * fw, hidden)
 
-        decoder_outputs = self.decoder(y=y, x=x, teacher_forcing_ratio=teacher_forcing_ratio)
+        decoder_outputs = self.decoder(y=y, x=x, teacher_forcing_ratio=teacher_forcing_ratio) # (batch, seq_len, num_classes)
 
         return decoder_outputs
