@@ -63,7 +63,7 @@ if __name__ == "__main__":
     parser.add_argument('-epochs',
                         '--epochs',
                         type=int,
-                        default=100,
+                        default=20,
                         required=False,
                         help="Training epochs")
 

@@ -2,7 +2,7 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 
-from constants import DEVICE, PAD, CHAR2IDX
+from constants import DEVICE, PAD, CHAR2IDX, SOS, EOS
 def CTC_loss(y_pred, y_true):
     ctc_loss_fn = nn.CTCLoss(blank=CHAR2IDX[PAD], reduction='sum').to(DEVICE)
 
@@ -25,7 +25,7 @@ def CTC_loss(y_pred, y_true):
     )
 
     loss /= y_true.shape[0] # normalize loss
-    
+
     assert loss.item() >= 0.0
 
     return loss
@@ -39,7 +39,10 @@ def CTC_decode(y_pred):
     for pred in y_pred:
         seq = []
         for i in range(len(pred)):
-            if pred[i] != CHAR2IDX[PAD] and (i == 0 or pred[i] != pred[i-1]):
+            if  pred[i] != CHAR2IDX[PAD] and \
+                pred[i] != CHAR2IDX[SOS] and \
+                pred[i] != CHAR2IDX[EOS] and \
+                    (i == 0 or pred[i] != pred[i-1]):
                 seq.append(pred[i])
         decoded_seqs.append(seq)
 
@@ -51,6 +54,8 @@ def CTC_accuracy_fn(y_pred, y_true):
     for i in range(y_true.shape[0]):
         pred, true = y_pred[i], y_true[i]
         true = true[true != CHAR2IDX[PAD]] # remove padding
+        true = true[true != CHAR2IDX[SOS]] # remove start of sequence
+        true = true[true != CHAR2IDX[EOS]] # remove end of sequence
         tot_ch += len(true)
         if len(pred) == len(true):
             cnt = 0
