@@ -8,11 +8,11 @@ from .FeatureExtractionCNN import FeatureExtractionCNN
 from settings import IMG_H, IMG_W, SOS, CHAR2IDX, MAX_LEN, DEVICE
 
 class Attention(nn.Module):
-    def __init__(self, hidden_size):
+    def __init__(self, hidden_size, encoder_hidden):
         super(Attention, self).__init__()
         self.hidden_size = hidden_size
 
-        self.attn = nn.Linear(hidden_size * 2, hidden_size)
+        self.attn = nn.Linear(hidden_size + encoder_hidden, hidden_size)
         self.v = nn.Parameter(torch.rand(hidden_size), requires_grad=True)
         self.init_weight()
     
@@ -27,6 +27,7 @@ class Attention(nn.Module):
         return attn_energies.softmax(2)
 
     def score(self, hidden, encoder_outputs):
+        # print(hidden.shape, encoder_outputs.shape, torch.cat([hidden, encoder_outputs], 2).shape)
         energy = torch.tanh(self.attn(torch.cat([hidden, encoder_outputs], 2)))
         energy = energy.transpose(1, 2)
         v = self.v.expand(encoder_outputs.size(0), -1).unsqueeze(1)
@@ -39,25 +40,28 @@ class Decoder(nn.Module):
 
         self.max_len = MAX_LEN
         self.emb = nn.Embedding(len(CHAR2IDX), hidden)
-        self.attention = Attention(hidden)
-        self.rnn = nn.GRU(hidden * 2, hidden, n_layers)
-        self.out = nn.Linear(hidden, len(CHAR2IDX))
+        self.attention = Attention(hidden * 2, hidden)
+        self.rnn1 = nn.GRU(hidden * 2, hidden, n_layers, bidirectional=True)
+        self.out = nn.Linear(hidden * 2, len(CHAR2IDX))
 
     def forward_step(self, input_, last_hidden, encoder_outputs):
         emb = self.emb(input_.transpose(0, 1)) # (1, batch, hidden)
-        attn = self.attention(last_hidden, encoder_outputs)  # (batch, 1, total pixels)
+        # convert last hidden to (1, batch, hidden * 2)
+        attn = self.attention(
+            torch.cat((last_hidden[0], last_hidden[1]), dim=1).unsqueeze(0), 
+            encoder_outputs)  # (batch, 1, total pixels)
         context = attn.bmm(encoder_outputs).transpose(0, 1)  # (1, batch, hidden)
         rnn_input = torch.cat((emb, context), dim=2) # (1, batch, hidden * 2)
-        outputs, hidden = self.rnn(rnn_input, last_hidden) # (1, batch, hidden), (layers, batch, hidden)
+        outputs, hidden = self.rnn1(rnn_input, last_hidden) # (1, batch, hidden), (layers, batch, hidden)
         outputs = self.out(outputs.contiguous().squeeze(0)).log_softmax(1) # (batch, vocab_size)
         return outputs, hidden
 
     def forward(self, x = None, y = None, teacher_forcing_ratio = 0):
         max_len = y.shape[1] - 1 if y is not None else self.max_len
         # initial hidden state
-        hidden = torch.zeros(1, x.shape[0], x.shape[-1]).to(DEVICE) # (layers, batch, hidden)
+        hidden = torch.zeros(2, x.shape[0], x.shape[-1]).to(DEVICE) # (layers, batch, hidden)
         # improve performance by flattenning the input
-        self.rnn.flatten_parameters()
+        self.rnn1.flatten_parameters()
 
         outputs = []
         # use teacher forcing

@@ -33,5 +33,4 @@ save_directory = f"train-outputs/train-{datetime.datetime.now().strftime('%Y.%m.
 os.makedirs(save_directory, exist_ok=True)
 
 image_directory = os.path.join(save_directory, "wrong-predictions")
-os.makedirs(image_directory, exist_ok=True)
 

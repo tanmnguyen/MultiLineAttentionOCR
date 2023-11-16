@@ -6,14 +6,14 @@ import torch.optim as optim
 from utils.io import log
 from utils.batch import collate_fn
 from utils.selections import get_model
-from utils.epochFns import train, valid
 from torch.utils.data import random_split, DataLoader
+from utils.epochFns import train, valid, save_wrong_predictions
 
 from settings import BATCH_SIZE, save_directory
 from dataset.LicensePlateDataset import LicensePlateDataset
 
 def main(args):
-    model, loss_fn, accuracy_fn = get_model(args.arch)
+    model, loss_fn, decode_fn = get_model(args.arch)
     dataset = LicensePlateDataset(args.data)
     train_ds, valid_ds = random_split(dataset, [0.9, 0.1])
 
@@ -41,11 +41,10 @@ def main(args):
         "-" * 100
     ])
 
-    best_sequence_acc = -1
-    train_history, valid_history = [], []
+    best_sequence_acc, train_history, valid_history = -1, [], []
     for epoch in range(1, args.epochs+1):
-        train_history.append(train(model, train_dataloader, optimizer, loss_fn, accuracy_fn, epoch, args.epochs))
-        valid_history.append(valid(model, valid_dataloader, loss_fn, accuracy_fn, epoch, args.epochs))
+        train_history.append(train(model, train_dataloader, optimizer, loss_fn, decode_fn, epoch, args.epochs))
+        valid_history.append(valid(model, valid_dataloader, loss_fn, decode_fn, epoch, args.epochs))
 
         if valid_history[-1]['sequence_acc'] > best_sequence_acc:
             best_sequence_acc = valid_history[-1]['sequence_acc']
@@ -53,6 +52,10 @@ def main(args):
 
         lr_scheduler.step()
         log([f"Learning Rate {lr_scheduler.get_last_lr()[0]}", ''])
+
+    # load best model 
+    model.load_state_dict(torch.load(os.path.join(save_directory, f"{args.arch}-model.pt")))
+    save_wrong_predictions(model, valid_dataloader, decode_fn)
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description='')
