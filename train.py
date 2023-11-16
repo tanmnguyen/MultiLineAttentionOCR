@@ -10,11 +10,11 @@ from torch.utils.data import random_split, DataLoader
 from utils.epochFns import train, valid, save_wrong_predictions
 
 from settings import BATCH_SIZE, save_directory
-from dataset.LicensePlateDataset import LicensePlateDataset
+from dataset.OCRZippedDataset import OCRZippedDataset
 
 def main(args):
     model, loss_fn, decode_fn = get_model(args.arch)
-    dataset = LicensePlateDataset(args.data)
+    dataset = OCRZippedDataset(args.data)
     train_ds, valid_ds = random_split(dataset, [0.9, 0.1])
 
     train_dataloader = DataLoader(

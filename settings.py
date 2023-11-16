@@ -8,7 +8,7 @@ EOS = '[EOS]'
 IMG_W = 224
 IMG_H = 50
 
-lets = [
+LETTERS = [
     PAD, SOS, EOS, 
     '0', '1', '2', '3', 
     '4', '5', '6', '7', 
@@ -20,11 +20,11 @@ lets = [
     'X', 'Y', 'Z'
 ]
 
-CHAR2IDX = {c : i for i, c in enumerate(lets)}
-IDX2CHAR = {i : c for i, c in enumerate(lets)}
+CHAR2IDX = {c : i for i, c in enumerate(LETTERS)}
+IDX2CHAR = {i : c for i, c in enumerate(LETTERS)}
 
 BATCH_SIZE = 32
-MAX_LEN = 10
+MAX_LEN = 11
 
 DEVICE = torch.device("cpu") if not torch.cuda.is_available() else torch.device("cuda:0")
 

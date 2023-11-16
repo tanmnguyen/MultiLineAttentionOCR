@@ -6,7 +6,7 @@ import numpy as np
 
 from torch.utils.data import Dataset
 
-class LicensePlateDataset(Dataset):
+class OCRZippedDataset(Dataset):
     def __init__(self, data_path: str):
         self.zipfile = zipfile.ZipFile(data_path, mode="r")
 
