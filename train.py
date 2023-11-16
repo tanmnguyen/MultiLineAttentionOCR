@@ -1,13 +1,15 @@
+import os 
 import torch
 import argparse 
 import torch.optim as optim
 
+from utils.io import log
 from utils.batch import collate_fn
 from utils.selections import get_model
-from utils.train_eval import train, valid
+from utils.epochFns import train, valid
 from torch.utils.data import random_split, DataLoader
 
-from constants import BATCH_SIZE, DEVICE
+from settings import BATCH_SIZE, save_directory
 from dataset.LicensePlateDataset import LicensePlateDataset
 
 def main(args):
@@ -30,40 +32,27 @@ def main(args):
     )
 
     optimizer = optim.Adam(model.parameters(), lr=0.001, weight_decay=1e-3)
-    lr_scheduler = optim.lr_scheduler.StepLR(optimizer, step_size=10, gamma=0.5, verbose=True)
+    lr_scheduler = optim.lr_scheduler.StepLR(optimizer, step_size=10, gamma=0.5, verbose=False)
 
-    print(model)
-    print("-" * 100)
-    print(f"Number of parameters = {sum(p.numel() for p in model.parameters() if p.requires_grad)}")
-    print(f"Total dataset = {len(dataset)} | Train dataset = {len(train_ds)} | Valid dataset = {len(valid_ds)}")
-    print("-" * 100)
+    log([model, 
+        "-" * 100, 
+        f"Number of parameters = {sum(p.numel() for p in model.parameters() if p.requires_grad)}",
+        f"Total dataset = {len(dataset)} | Train dataset = {len(train_ds)} | Valid dataset = {len(valid_ds)}",
+        "-" * 100
+    ])
 
-    best_sequence_acc = 0.0
-
+    best_sequence_acc = -1
     train_history, valid_history = [], []
     for epoch in range(1, args.epochs+1):
         train_history.append(train(model, train_dataloader, optimizer, loss_fn, accuracy_fn, epoch, args.epochs))
         valid_history.append(valid(model, valid_dataloader, loss_fn, accuracy_fn, epoch, args.epochs))
 
-        best_sequence_acc = max(best_sequence_acc, valid_history[-1]["sequence_acc"])
+        if valid_history[-1]['sequence_acc'] > best_sequence_acc:
+            best_sequence_acc = valid_history[-1]['sequence_acc']
+            torch.save(model.state_dict(), os.path.join(save_directory, f"{args.arch}-model.pt"))
+
         lr_scheduler.step()
-
-        print() 
-
-    for x, y in valid_dataloader:
-        y_pred = model(x.to(DEVICE), y.to(DEVICE), teacher_forcing_ratio=0)
-        y_pred = torch.argmax(y_pred, dim=-1)
-
-        for i in range(y_pred.shape[0]):
-            print("prediction")
-            print(y_pred[i])
-            print("target")
-            print(y[i,1:])
-            print()
-
-        break
-
-    print(f"Best Valid Sequence Accuracy = {best_sequence_acc:.4f}")
+        log([f"Learning Rate {lr_scheduler.get_last_lr()[0]}", ''])
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description='')

@@ -40,4 +40,4 @@ class LicensePlateDataset(Dataset):
             img = cv2.imdecode(np.frombuffer(img_file.read(), np.uint8), cv2.IMREAD_COLOR)
             img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
 
-        return img, lbl
+        return img, lbl, img_path

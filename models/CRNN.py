@@ -4,7 +4,7 @@ sys.path.append("../")
 import torch
 import torch.nn as nn
 
-from constants import DEVICE, IMG_H, IMG_W, CHAR2IDX
+from settings import DEVICE, IMG_H, IMG_W, CHAR2IDX
 from .FeatureExtractionCNN import FeatureExtractionCNN
 
 class CRNN(nn.Module):

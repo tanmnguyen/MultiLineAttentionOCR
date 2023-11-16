@@ -5,7 +5,7 @@ import math
 import torch
 import torch.nn as nn
 from .FeatureExtractionCNN import FeatureExtractionCNN
-from constants import IMG_H, IMG_W, SOS, CHAR2IDX, MAX_LEN, DEVICE
+from settings import IMG_H, IMG_W, SOS, CHAR2IDX, MAX_LEN, DEVICE
 
 class Attention(nn.Module):
     def __init__(self, hidden_size):

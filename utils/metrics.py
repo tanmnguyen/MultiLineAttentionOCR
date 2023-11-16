@@ -2,13 +2,16 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 
-from constants import DEVICE, PAD, CHAR2IDX, SOS, EOS
+from utils.io import save_image_prediction 
+from settings import DEVICE, PAD, CHAR2IDX, IDX2CHAR, EOS
 
-def l2_regularization(model, l2_weight=1e-6):
-    l2_reg = torch.tensor(0.).to(DEVICE)
-    for param in model.parameters():
-        l2_reg += torch.norm(param)
-    return l2_weight * l2_reg
+def to_string(y):
+    # find eos index 
+    eos_idx = torch.where(y == CHAR2IDX[EOS])[0]
+    # remove everything after eos token
+    y = y[:eos_idx[0]] if len(eos_idx) > 0 else y
+    # convert to string
+    return ''.join([IDX2CHAR[i.item()] for i in y])
 
 def autoregressive_loss(y_pred, y_true):
     loss = 0
@@ -19,34 +22,35 @@ def autoregressive_loss(y_pred, y_true):
     loss /= y_true.shape[0] 
     return loss 
 
-def decoder_accuracy_fn(y_pred, y_true):
-    y_pred = torch.argmax(y_pred, dim=-1) # (batch, seq_len)
+def autoregressive_decode(y_pred):
+    return torch.argmax(y_pred, dim=-1) # (batch, seq_len)
+
+def autoregressive_accuracy_fn(y_pred, y_true, x = None, x_path = None, image_directory = None):
+    y_pred = autoregressive_decode(y_pred)
     tot_ch, ch_acc, sq_acc = 0, 0, 0
     for i in range(y_pred.shape[0]):
         eq = y_pred[i, :] == y_true[i, 1:]  # ignore SOS token
         tot_ch += y_true.shape[1] - 1       # ignore SOS token
         ch_acc += torch.sum(eq).item()
-        sq_acc += 1 if torch.sum(eq) == y_pred.shape[1] else 0
+
+        if torch.sum(eq) == y_pred.shape[1]:
+            sq_acc += 1
+        elif x_path is not None and x is not None: 
+            # save the wrong predictions 
+            save_image_prediction(to_string(y_pred[i]), to_string(y_true[i, 1:]), x[i], x_path[i], image_directory)
+
     # normalize results
     return ch_acc / tot_ch, sq_acc / y_pred.shape[0]
 
 def CTC_loss(y_pred, y_true):
     ctc_loss_fn = nn.CTCLoss(blank=CHAR2IDX[PAD], reduction='sum').to(DEVICE)
-
     y_pred = F.log_softmax(y_pred, dim=-1)
-    target = y_true
 
     input_lengths = torch.IntTensor([y_pred.shape[0]] * y_pred.shape[1]).to(DEVICE)
     target_lengths = torch.IntTensor([torch.sum(y != CHAR2IDX[PAD]) for y in y_true]).to(DEVICE)
-        
-    loss = ctc_loss_fn(
-      y_pred,
-      target,
-      input_lengths,
-      target_lengths
-    )
 
-    loss /= y_true.shape[0] # normalize loss
+    loss = ctc_loss_fn(y_pred, y_true, input_lengths, target_lengths)
+    loss /= y_true.shape[0] 
 
     return loss
 
@@ -65,7 +69,7 @@ def CTC_decode(y_pred):
 
     return decoded_seqs
 
-def CTC_accuracy_fn(y_pred, y_true):
+def CTC_accuracy_fn(y_pred, y_true, x = None, x_path = None):
     y_pred = CTC_decode(y_pred)
     tot_ch, ch_acc, sq_acc = 0, 0, 0
     for i in range(y_true.shape[0]):

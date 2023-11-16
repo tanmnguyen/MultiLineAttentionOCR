@@ -1,4 +1,6 @@
+import os 
 import torch 
+import datetime
 
 PAD = '[PAD]'
 SOS = '[SOS]'
@@ -25,3 +27,11 @@ BATCH_SIZE = 32
 MAX_LEN = 10
 
 DEVICE = torch.device("cpu") if not torch.cuda.is_available() else torch.device("cuda:0")
+
+# create default save directory for each run
+save_directory = f"train-outputs/train-{datetime.datetime.now().strftime('%Y.%m.%d. %H.%M.%S')}"
+os.makedirs(save_directory, exist_ok=True)
+
+image_directory = os.path.join(save_directory, "wrong-predictions")
+os.makedirs(image_directory, exist_ok=True)
+

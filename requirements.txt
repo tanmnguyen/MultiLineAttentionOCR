@@ -3,3 +3,4 @@ numpy==1.26.1
 torchtext==0.16.0
 opencv-python==4.8.1.78
 torchvision==0.16.0
+matplotlib==3.8.1
