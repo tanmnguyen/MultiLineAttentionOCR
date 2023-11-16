@@ -42,16 +42,19 @@ def main(args):
     ])
 
     best_sequence_acc, train_history, valid_history = -1, [], []
-    for epoch in range(1, args.epochs+1):
-        train_history.append(train(model, train_dataloader, optimizer, loss_fn, decode_fn, epoch, args.epochs))
-        valid_history.append(valid(model, valid_dataloader, loss_fn, decode_fn, epoch, args.epochs))
+    try:
+        for epoch in range(1, args.epochs+1):
+            train_history.append(train(model, train_dataloader, optimizer, loss_fn, decode_fn, epoch, args.epochs))
+            valid_history.append(valid(model, valid_dataloader, loss_fn, decode_fn, epoch, args.epochs))
 
-        if valid_history[-1]['sequence_acc'] > best_sequence_acc:
-            best_sequence_acc = valid_history[-1]['sequence_acc']
-            torch.save(model.state_dict(), os.path.join(save_directory, f"{args.arch}-model.pt"))
+            if valid_history[-1]['sequence_acc'] > best_sequence_acc:
+                best_sequence_acc = valid_history[-1]['sequence_acc']
+                torch.save(model.state_dict(), os.path.join(save_directory, f"{args.arch}-model.pt"))
 
-        lr_scheduler.step()
-        log([f"Learning Rate {lr_scheduler.get_last_lr()[0]}", ''])
+            lr_scheduler.step()
+            log([f"Learning Rate {lr_scheduler.get_last_lr()[0]}", ''])
+    except KeyboardInterrupt:
+        pass 
 
     # load best model 
     model.load_state_dict(torch.load(os.path.join(save_directory, f"{args.arch}-model.pt")))
@@ -74,7 +77,7 @@ if __name__ == "__main__":
     parser.add_argument('-epochs',
                         '--epochs',
                         type=int,
-                        default=20,
+                        default=50,
                         required=False,
                         help="Training epochs")
 

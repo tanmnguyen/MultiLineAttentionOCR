@@ -27,7 +27,6 @@ class Attention(nn.Module):
         return attn_energies.softmax(2)
 
     def score(self, hidden, encoder_outputs):
-        # print(hidden.shape, encoder_outputs.shape, torch.cat([hidden, encoder_outputs], 2).shape)
         energy = torch.tanh(self.attn(torch.cat([hidden, encoder_outputs], 2)))
         energy = energy.transpose(1, 2)
         v = self.v.expand(encoder_outputs.size(0), -1).unsqueeze(1)
