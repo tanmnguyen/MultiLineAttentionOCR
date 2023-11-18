@@ -80,7 +80,7 @@ target/
 
 # IPython
 profile_default/
-ipython_config.py
+ipython_settings.py
 
 # pyenv
 #   For a library or package, you might want to ignore these files since the code is
@@ -104,7 +104,7 @@ ipython_config.py
 # pdm
 #   Similar to Pipfile.lock, it is generally recommended to include pdm.lock in version control.
 #pdm.lock
-#   pdm stores project-wide configurations in .pdm.toml, but it is recommended to not include it
+#   pdm stores project-wide settingss in .pdm.toml, but it is recommended to not include it
 #   in version control.
 #   https://pdm.fming.dev/#use-with-ide
 .pdm.toml

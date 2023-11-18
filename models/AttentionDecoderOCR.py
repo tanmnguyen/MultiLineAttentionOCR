@@ -4,8 +4,8 @@ sys.path.append("../")
 import math
 import torch
 import torch.nn as nn
+from settings import settings 
 from .FeatureExtractionCNN import FeatureExtractionCNN
-from settings import IMG_H, IMG_W, SOS, CHAR2IDX, MAX_LEN, DEVICE
 
 class Attention(nn.Module):
     def __init__(self, hidden_size, encoder_hidden):
@@ -37,11 +37,11 @@ class Decoder(nn.Module):
     def __init__(self, hidden, n_layers = 1):
         super(Decoder, self).__init__()
 
-        self.max_len = MAX_LEN
-        self.emb = nn.Embedding(len(CHAR2IDX), hidden)
+        self.max_len = settings.MAX_LEN
+        self.emb = nn.Embedding(len(settings.CHAR2IDX), hidden)
         self.attention = Attention(hidden * 2, hidden)
         self.rnn1 = nn.GRU(hidden * 2, hidden, n_layers, bidirectional=True)
-        self.out = nn.Linear(hidden * 2, len(CHAR2IDX))
+        self.out = nn.Linear(hidden * 2, len(settings.CHAR2IDX))
 
     def forward_step(self, input_, last_hidden, encoder_outputs):
         emb = self.emb(input_.transpose(0, 1)) # (1, batch, hidden)
@@ -58,7 +58,7 @@ class Decoder(nn.Module):
     def forward(self, x = None, y = None, teacher_forcing_ratio = 0):
         max_len = y.shape[1] - 1 if y is not None else self.max_len
         # initial hidden state
-        hidden = torch.zeros(2, x.shape[0], x.shape[-1]).to(DEVICE) # (layers, batch, hidden)
+        hidden = torch.zeros(2, x.shape[0], x.shape[-1]).to(settings.DEVICE) # (layers, batch, hidden)
         # improve performance by flattenning the input
         self.rnn1.flatten_parameters()
 
@@ -72,7 +72,7 @@ class Decoder(nn.Module):
                 # save output
                 outputs.append(output.squeeze(1))
         else:
-            decoder_input = torch.tensor([CHAR2IDX[SOS]]).expand(x.shape[0], 1).to(DEVICE)
+            decoder_input = torch.tensor([settings.CHAR2IDX[settings.SOS]]).expand(x.shape[0], 1).to(settings.DEVICE)
             for di in range(max_len):
                 # compute next output using encoder outputs, last predicted character, hidden state
                 output, hidden = self.forward_step(
@@ -102,9 +102,9 @@ class PositionEmbedding(nn.Module):
 class AttentionDecoderOCR(nn.Module):
     def __init__(self, hidden=256):
         super(AttentionDecoderOCR, self).__init__()
-        self.cnn = FeatureExtractionCNN().to(DEVICE)
+        self.cnn = FeatureExtractionCNN().to(settings.DEVICE)
         # get the shape of feature output
-        b, fc, fh, fw = self.cnn(torch.randn(1, 3, IMG_H, IMG_W).to(DEVICE)).shape
+        b, fc, fh, fw = self.cnn(torch.randn(1, 3, settings.IMG_H, settings.IMG_W).to(settings.DEVICE)).shape
         # vertical position embedding
         self.emb_i = PositionEmbedding(fh)
         # horizontal position embedding
@@ -127,8 +127,8 @@ class AttentionDecoderOCR(nn.Module):
         )
        
         # build embedding for each i and j positions
-        i_emb = self.emb_i(i_grid.to(DEVICE)) # (fh, fh)
-        j_emb = self.emb_j(j_grid.to(DEVICE)) # (fw, fw)
+        i_emb = self.emb_i(i_grid.to(settings.DEVICE)) # (fh, fh)
+        j_emb = self.emb_j(j_grid.to(settings.DEVICE)) # (fw, fw)
 
         # build positional embedding 
         p_emb = torch.cat([i_emb, j_emb], dim=-1).expand(b, -1, -1, -1) # (b, fh, fw, fh + fw)

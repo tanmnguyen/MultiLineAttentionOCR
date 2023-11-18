@@ -5,17 +5,17 @@ import argparse
 import numpy as np
 from tqdm import tqdm
 from captcha.image import ImageCaptcha
-from settings import IMG_H, IMG_W, MAX_LEN, LETTERS 
+from settings import settings 
 
-image_directory = "captchas"
-os.makedirs(image_directory, exist_ok=True)
+CAPT_IMG_DIR = "captchas"
+os.makedirs(CAPT_IMG_DIR, exist_ok=True)
 
 def randomize_content(lower_len, upper_len):
-    content = ''.join([random.choice(LETTERS[4:]) for _ in range(random.randint(lower_len, upper_len))])
+    content = ''.join([random.choice(settings.LETTERS[4:]) for _ in range(random.randint(lower_len, upper_len))])
     return content
 
 def main(args):
-    imageCaptcha = ImageCaptcha(height = IMG_H, width = IMG_W)
+    imageCaptcha = ImageCaptcha(height = settings.IMG_H, width = settings.IMG_W)
 
     capt_count = {}
     for i in tqdm(range(args.num)):
@@ -35,9 +35,9 @@ def main(args):
             capt_img = np.concatenate((capt_img, capt_imgs[i]), axis=0)
 
         # save data 
-        cv2.imwrite(os.path.join(image_directory, f"{filename}.png"), capt_img)
-        # capt_img.save(os.path.join(image_directory, f"{filename}.png"))
-        with open(os.path.join(image_directory, f"{filename}.txt"), "w") as f:
+        cv2.imwrite(os.path.join(CAPT_IMG_DIR, f"{filename}.png"), capt_img)
+        # capt_img.save(os.path.join(CAPT_IMG_DIR, f"{filename}.png"))
+        with open(os.path.join(CAPT_IMG_DIR, f"{filename}.txt"), "w") as f:
             f.write(joined_content)
 
 if __name__ == "__main__":

@@ -1,36 +1,39 @@
-import os 
-import torch 
+import os
+import torch
 import datetime
+import configparser
 
-PAD = '[PAD]'
-SOS = '[SOS]'
-EOS = '[EOS]'
-IMG_W = 224
-IMG_H = 50
+class Settings:
+    def __init__(self):
+        self.PAD = '[PAD]'
+        self.SOS = '[SOS]'
+        self.EOS = '[EOS]'
+    
+        self.DEVICE = torch.device("cpu") if not torch.cuda.is_available() else torch.device("cuda:0")
+        self.SAVE_DIR = f"train-outputs/train-{datetime.datetime.now().strftime('%Y.%m.%d. %H.%M.%S')}"
+        self.IMG_DIR = os.path.join(self.SAVE_DIR, "wrong-predictions")
 
-LETTERS = [
-    PAD, SOS, EOS, 
-    '0', '1', '2', '3', 
-    '4', '5', '6', '7', 
-    '8', '9', 'A', 'B', 
-    'C', 'D', 'E', 'F', 
-    'G', 'H', 'K', 'L', 
-    'M', 'N', 'P', 'R', 
-    'S', 'T', 'U', 'V', 
-    'X', 'Y', 'Z'
-]
+        os.makedirs(self.SAVE_DIR, exist_ok=True)
 
-CHAR2IDX = {c : i for i, c in enumerate(LETTERS)}
-IDX2CHAR = {i : c for i, c in enumerate(LETTERS)}
+    def load_configuration(self, cfg_file):
+        config = configparser.ConfigParser()
+        config.read(cfg_file)
 
-BATCH_SIZE = 32
-MAX_LEN = 11
+        # Access the configuration values
+        self.ARCH = config['DEFAULT']['ARCH']
+        self.EPOCHS = config.getint('DEFAULT', 'EPOCHS')
+        self.BATCH_SIZE = config.getint('DEFAULT', 'BATCH_SIZE')
+        self.LR = config.getfloat('DEFAULT', 'LR')
+        self.IMG_W = config.getint('DEFAULT', 'IMG_W')
+        self.IMG_H = config.getint('DEFAULT', 'IMG_H')
+        self.LETTERS = config['DEFAULT']['LETTERS']
+        self.MAX_LEN = config.getint('DEFAULT', 'MAX_LEN')
+        self.DATA = config['DEFAULT']['DATA']
 
-DEVICE = torch.device("cpu") if not torch.cuda.is_available() else torch.device("cuda:0")
+        self.LETTERS = [self.PAD, self.SOS, self.EOS] + list(self.LETTERS)
+        self.CHAR2IDX = {c : i for i, c in enumerate(self.LETTERS)}
+        self.IDX2CHAR = {i : c for i, c in enumerate(self.LETTERS)}
 
-# create default save directory for each run
-save_directory = f"train-outputs/train-{datetime.datetime.now().strftime('%Y.%m.%d. %H.%M.%S')}"
-os.makedirs(save_directory, exist_ok=True)
+settings = Settings()
 
-image_directory = os.path.join(save_directory, "wrong-predictions")
 

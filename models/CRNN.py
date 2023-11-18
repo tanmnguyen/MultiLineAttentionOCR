@@ -4,20 +4,20 @@ sys.path.append("../")
 import torch
 import torch.nn as nn
 
-from settings import DEVICE, IMG_H, IMG_W, CHAR2IDX
+from settings import settings 
 from .FeatureExtractionCNN import FeatureExtractionCNN
 
 class CRNN(nn.Module):
     def __init__(self):
         super(CRNN, self).__init__()
         # feature extraction
-        self.cnn = FeatureExtractionCNN().to(DEVICE)
-        b, fc, fh, fw = self.cnn(torch.randn(1, 3, IMG_H, IMG_W).to(DEVICE)).shape
+        self.cnn = FeatureExtractionCNN().to(settings.DEVICE)
+        b, fc, fh, fw = self.cnn(torch.randn(1, 3, settings.IMG_H, settings.IMG_W).to(settings.DEVICE)).shape
         # recurrent layers
         self.rnn1 = nn.LSTM(fh * fc, 64, 1, bidirectional=True)
         self.rnn2 = nn.LSTM(64 * 2 , 64, 1, bidirectional=True)
         # hidden to label
-        self.fc = nn.Linear(64 * 2, len(CHAR2IDX))
+        self.fc = nn.Linear(64 * 2, len(settings.CHAR2IDX))
 
     def forward(self, x):
         x = self.cnn(x) # (batch, fc, fh, fw)

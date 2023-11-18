@@ -2,7 +2,7 @@ import os
 import torch
 
 from tqdm import tqdm
-from settings import DEVICE
+from settings import settings
 from models.CRNN import CRNN
 from utils.io import log, save_image_prediction
 from utils.metrics import accuracy_fn, to_string
@@ -14,8 +14,8 @@ def train(model, train_dataloader, optimizer, loss_fn, decode_fn, epoch, num_epo
     for x_train, y_train, _ in tqdm(train_dataloader, leave=False):
         optimizer.zero_grad()
 
-        y_pred = model(x_train.to(DEVICE)) if isinstance(model, CRNN) else \
-                 model(x_train.to(DEVICE), y_train.to(DEVICE), teacher_forcing_ratio=teacher_forcing_ratio)
+        y_pred = model(x_train.to(settings.DEVICE)) if isinstance(model, CRNN) else \
+                 model(x_train.to(settings.DEVICE), y_train.to(settings.DEVICE), teacher_forcing_ratio=teacher_forcing_ratio)
             
         loss = loss_fn(y_pred, y_train)
 
@@ -51,8 +51,8 @@ def valid(model, valid_dataloader, loss_fn, decode_fn, epoch, num_epochs):
     for x_valid, y_valid, x_pth in tqdm(valid_dataloader, leave=False):
         # for the purpose of testing, we will provide y train to the attention decoder model to ensure the 
         # sequence length is correct. 
-        y_pred = model(x_valid.to(DEVICE)) if isinstance(model, CRNN) else \
-                 model(x_valid.to(DEVICE), y_valid.to(DEVICE), teacher_forcing_ratio=0) 
+        y_pred = model(x_valid.to(settings.DEVICE)) if isinstance(model, CRNN) else \
+                 model(x_valid.to(settings.DEVICE), y_valid.to(settings.DEVICE), teacher_forcing_ratio=0) 
         
         loss = loss_fn(y_pred, y_valid) 
 
@@ -82,8 +82,8 @@ def valid(model, valid_dataloader, loss_fn, decode_fn, epoch, num_epochs):
 
 def save_wrong_predictions(model, dataloader, decode_fn):
     for x_valid, y_valid, x_pth in tqdm(dataloader, leave=False):
-        y_pred = model(x_valid.to(DEVICE)) if isinstance(model, CRNN) else \
-                 model(x_valid.to(DEVICE), y_valid.to(DEVICE), teacher_forcing_ratio=0) 
+        y_pred = model(x_valid.to(settings.DEVICE)) if isinstance(model, CRNN) else \
+                 model(x_valid.to(settings.DEVICE), y_valid.to(settings.DEVICE), teacher_forcing_ratio=0) 
 
         with torch.no_grad():
             y_pred = decode_fn(y_pred)

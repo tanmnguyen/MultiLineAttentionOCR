@@ -2,32 +2,31 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 
-from utils.io import save_image_prediction 
-from settings import DEVICE, PAD, CHAR2IDX, IDX2CHAR, EOS, SOS
+from settings import settings 
 
 def to_string(y):
-    # find eos index 
-    eos_idx = torch.where(y == CHAR2IDX[EOS])[0]
-    # remove everything after eos token
+    # find EOS index 
+    eos_idx = torch.where(y == settings.CHAR2IDX[settings.EOS])[0]
+    # remove everything after settings.EOS token
     y = y[:eos_idx[0]] if len(eos_idx) > 0 else y
     # convert to string
-    return ''.join([IDX2CHAR[i.item()] for i in y])
+    return ''.join([settings.IDX2CHAR[i.item()] for i in y])
 
 def autoregressive_loss(y_pred, y_true):
     loss = 0
-    loss_fn = nn.NLLLoss(reduction='sum').to(DEVICE)
+    loss_fn = nn.NLLLoss(reduction='sum').to(settings.DEVICE)
     for i in range(y_pred.shape[1]):
-        loss += loss_fn(y_pred[:, i, :], y_true[:, i + 1].to(torch.long)) # ignore SOS token
+        loss += loss_fn(y_pred[:, i, :], y_true[:, i + 1].to(torch.long)) # ignore settings.SOS token
     # normalize loss
     loss /= y_true.shape[0] 
     return loss 
 
 def CTC_loss(y_pred, y_true):
-    ctc_loss_fn = nn.CTCLoss(blank=CHAR2IDX[PAD], reduction='sum').to(DEVICE)
+    ctc_loss_fn = nn.CTCLoss(blank=settings.CHAR2IDX[settings.PAD], reduction='sum').to(settings.DEVICE)
     y_pred = F.log_softmax(y_pred, dim=-1)
 
-    input_lengths = torch.IntTensor([y_pred.shape[0]] * y_pred.shape[1]).to(DEVICE)
-    target_lengths = torch.IntTensor([torch.sum(y != CHAR2IDX[PAD]) for y in y_true]).to(DEVICE)
+    input_lengths = torch.IntTensor([y_pred.shape[0]] * y_pred.shape[1]).to(settings.DEVICE)
+    target_lengths = torch.IntTensor([torch.sum(y != settings.CHAR2IDX[settings.PAD]) for y in y_true]).to(settings.DEVICE)
 
     loss = ctc_loss_fn(y_pred, y_true, input_lengths, target_lengths)
     loss /= y_true.shape[0] 
@@ -62,9 +61,9 @@ def CTC_decode(y_pred):
 
     for i in range(y_pred.shape[0]):
         y_dec = torch.unique_consecutive(y_pred[i])
-        y_dec = y_dec[y_dec != CHAR2IDX[PAD]]
+        y_dec = y_dec[y_dec != settings.CHAR2IDX[settings.PAD]]
         y_pred[i, :len(y_dec)] = y_dec
-        y_pred[i, len(y_dec):] = CHAR2IDX[PAD]
+        y_pred[i, len(y_dec):] = settings.CHAR2IDX[settings.PAD]
     
     # ignore SOS token 
     y_pred = y_pred[:, 1:]

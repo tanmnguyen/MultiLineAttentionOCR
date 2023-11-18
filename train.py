@@ -9,30 +9,33 @@ from utils.selections import get_model
 from torch.utils.data import random_split, DataLoader
 from utils.epochFns import train, valid, save_wrong_predictions
 
-from settings import BATCH_SIZE, save_directory
+from settings import settings 
 from dataset.OCRZippedDataset import OCRZippedDataset
 
 def main(args):
-    model, loss_fn, decode_fn = get_model(args.arch)
-    dataset = OCRZippedDataset(args.data)
+    settings.load_configuration(args.cfg)
+   
+    model, loss_fn, decode_fn = get_model(settings.ARCH)
+
+    dataset = OCRZippedDataset(settings.DATA)
     train_ds, valid_ds = random_split(dataset, [0.9, 0.1])
 
     train_dataloader = DataLoader(
         train_ds, 
-        batch_size=BATCH_SIZE, 
+        batch_size=settings.BATCH_SIZE, 
         collate_fn=collate_fn, 
         shuffle=True
     )
 
     valid_dataloader = DataLoader(
         valid_ds, 
-        batch_size=BATCH_SIZE, 
+        batch_size=settings.BATCH_SIZE, 
         collate_fn=collate_fn, 
         shuffle=False
     )
 
-    optimizer = optim.Adam(model.parameters(), lr=0.001, weight_decay=1e-3)
-    lr_scheduler = optim.lr_scheduler.StepLR(optimizer, step_size=10, gamma=0.5, verbose=False)
+    optimizer = optim.Adam(model.parameters(), lr=settings.LR, weight_decay=1e-3)
+    lr_scheduler = optim.lr_scheduler.StepLR(optimizer, step_size=7, gamma=0.75, verbose=False)
 
     log([model, 
         "-" * 100, 
@@ -43,13 +46,13 @@ def main(args):
 
     best_sequence_acc, train_history, valid_history = -1, [], []
     try:
-        for epoch in range(1, args.epochs+1):
-            train_history.append(train(model, train_dataloader, optimizer, loss_fn, decode_fn, epoch, args.epochs))
-            valid_history.append(valid(model, valid_dataloader, loss_fn, decode_fn, epoch, args.epochs))
+        for epoch in range(1, settings.EPOCHS + 1):
+            train_history.append(train(model, train_dataloader, optimizer, loss_fn, decode_fn, epoch, settings.EPOCHS))
+            valid_history.append(valid(model, valid_dataloader, loss_fn, decode_fn, epoch, settings.EPOCHS))
 
             if valid_history[-1]['sequence_acc'] > best_sequence_acc:
                 best_sequence_acc = valid_history[-1]['sequence_acc']
-                torch.save(model.state_dict(), os.path.join(save_directory, f"{args.arch}-model.pt"))
+                torch.save(model.state_dict(), os.path.join(settings.SAVE_DIR, f"{settings.ARCH}-model.pt"))
 
             lr_scheduler.step()
             log([f"Learning Rate {lr_scheduler.get_last_lr()[0]}", ''])
@@ -57,29 +60,16 @@ def main(args):
         pass 
 
     # load best model 
-    model.load_state_dict(torch.load(os.path.join(save_directory, f"{args.arch}-model.pt")))
+    model.load_state_dict(torch.load(os.path.join(settings.SAVE_DIR, f"{settings.ARCH}-model.pt")))
     save_wrong_predictions(model, valid_dataloader, decode_fn)
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description='')
 
-    parser.add_argument('-data',
-                        '--data',
+    parser.add_argument('-cfg',
+                        '--cfg',
                         required=True,
-                        help="Path to training data .zip file")
-    
-    parser.add_argument('-arch',
-                        '--arch',
-                        type=str,
-                        required=True,
-                        help="Model Archiecture: CRNN, ATTDEC")
-    
-    parser.add_argument('-epochs',
-                        '--epochs',
-                        type=int,
-                        default=50,
-                        required=False,
-                        help="Training epochs")
+                        help="Path to configuration .cfg file")
 
     args = parser.parse_args()
     main(args)
