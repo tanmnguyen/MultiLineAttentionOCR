@@ -59,6 +59,8 @@ def main(args):
     except KeyboardInterrupt:
         pass 
 
+    print("Best Sequence Accuracy:", best_sequence_acc)
+    
     # load best model 
     model.load_state_dict(torch.load(os.path.join(settings.SAVE_DIR, f"{settings.ARCH}-model.pt")))
     save_wrong_predictions(model, valid_dataloader, decode_fn)

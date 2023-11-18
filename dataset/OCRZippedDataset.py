@@ -1,10 +1,12 @@
 import os 
 import cv2 
 import copy
+import random
 import zipfile
 import numpy as np
 
 from torch.utils.data import Dataset
+from utils.images import get_random_augmentation
 
 class OCRZippedDataset(Dataset):
     def __init__(self, data_path: str):
@@ -39,5 +41,9 @@ class OCRZippedDataset(Dataset):
         with self.zipfile.open(img_path) as img_file:
             img = cv2.imdecode(np.frombuffer(img_file.read(), np.uint8), cv2.IMREAD_COLOR)
             img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
+
+        if random.random() < 0.5:
+            augmentation_fn = get_random_augmentation()
+            img = augmentation_fn(img) 
 
         return img, lbl, img_path
