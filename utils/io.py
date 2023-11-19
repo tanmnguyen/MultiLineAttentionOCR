@@ -3,8 +3,34 @@ sys.path.append("../")
 
 import os 
 import numpy as np
-import matplotlib.pyplot as plt
 from settings import settings 
+import matplotlib.pyplot as plt
+
+def plot_learning_curve(history, title: str):
+    epoch_loss = [item["epoch_loss"] for item in history]
+    character_acc = [item["character_acc"] for item in history]
+    sequence_acc = [item["sequence_acc"] for item in history]
+
+    plt.figure(figsize=(12, 4))
+
+    plt.subplot(1, 2, 1)
+    plt.plot(epoch_loss, label="Epoch Loss")
+    plt.xlabel("Epoch")
+    plt.ylabel("Loss")
+    plt.title(f"{title} - Epoch Loss")
+    plt.legend()
+
+    plt.subplot(1, 2, 2)
+    plt.plot(character_acc, label="Character Accuracy")
+    plt.plot(sequence_acc, label="Sequence Accuracy")
+    plt.xlabel("Epoch")
+    plt.ylabel("Accuracy")
+    plt.title(f"{title} - Accuracy")
+    plt.legend()
+
+    plt.tight_layout()
+    plt.savefig(os.path.join(settings.SAVE_DIR, f"{title}.png"))
+    
 
 def save_image_prediction(y_pred_str, y_true_str, img, img_path):
     os.makedirs(settings.IMG_DIR, exist_ok=True)

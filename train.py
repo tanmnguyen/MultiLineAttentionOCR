@@ -3,9 +3,10 @@ import torch
 import argparse 
 import torch.optim as optim
 
-from utils.io import log
 from utils.batch import collate_fn
 from utils.selections import get_model
+from utils.io import log, plot_learning_curve
+
 from torch.utils.data import random_split, DataLoader
 from utils.epochFns import train, valid, save_wrong_predictions
 
@@ -60,7 +61,11 @@ def main(args):
         pass 
 
     print("Best Sequence Accuracy:", best_sequence_acc)
-    
+
+    # plot learning curve
+    plot_learning_curve(train_history, "train")
+    plot_learning_curve(valid_history, "valid")
+
     # load best model 
     model.load_state_dict(torch.load(os.path.join(settings.SAVE_DIR, f"{settings.ARCH}-model.pt")))
     save_wrong_predictions(model, valid_dataloader, decode_fn)

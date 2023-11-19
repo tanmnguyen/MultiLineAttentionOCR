@@ -32,7 +32,7 @@ class OCRZippedDataset(Dataset):
         self.lbls      = lbls
 
     def __len__(self):
-        return 5000
+        return 100 
         assert len(self.img_paths) == len(self.lbls)
         return len(self.img_paths)
 
