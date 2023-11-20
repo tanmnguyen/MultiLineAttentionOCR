@@ -10,7 +10,12 @@ from utils.metrics import CTC_loss, CTC_decode, autoregressive_loss, autoregress
 def get_model(arch: str):
     # Convolutional Recurrent Neural Network
     if arch.upper() == "CRNN":
-        return CRNN().to(settings.DEVICE), CTC_loss, CTC_decode
+        return CRNN(
+            img_h=settings.IMG_H,
+            img_w=settings.IMG_W,
+            hidden_size=64, 
+            num_classes=len(settings.CHAR2IDX)
+        ).to(settings.DEVICE), CTC_loss, CTC_decode
     
     # Attention Decoder Neural Network
     if arch.upper() == "ATTDEC":
