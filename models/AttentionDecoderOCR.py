@@ -4,15 +4,16 @@ sys.path.append("../")
 import math
 import torch
 import torch.nn as nn
+
 from settings import settings 
-from .FeatureExtractionCNN import FeatureExtractionCNN
+from models.MyIncept import MyIncept
 
 class Attention(nn.Module):
-    def __init__(self, hidden_size, encoder_hidden):
+    def __init__(self, hidden_size):
         super(Attention, self).__init__()
         self.hidden_size = hidden_size
 
-        self.attn = nn.Linear(hidden_size + encoder_hidden, hidden_size)
+        self.attn = nn.Linear(hidden_size * 2, hidden_size)
         self.v = nn.Parameter(torch.rand(hidden_size), requires_grad=True)
         self.init_weight()
     
@@ -34,50 +35,51 @@ class Attention(nn.Module):
         return energy
 
 class Decoder(nn.Module):
-    def __init__(self, hidden, n_layers = 1):
+    def __init__(self, max_len, hidden_size, num_classes):
         super(Decoder, self).__init__()
 
-        self.max_len = settings.MAX_LEN
-        self.emb = nn.Embedding(len(settings.CHAR2IDX), hidden)
-        self.attention = Attention(hidden * 2, hidden)
-        self.rnn1 = nn.GRU(hidden * 2, hidden, n_layers, bidirectional=True)
-        self.out = nn.Linear(hidden * 2, len(settings.CHAR2IDX))
+        self.hidden_size = hidden_size 
+        self.max_len = max_len
+
+        self.emb = nn.Embedding(num_classes, hidden_size)
+        self.attention = Attention(hidden_size)
+        self.rnn = nn.GRU(hidden_size * 2, hidden_size, 1)
+        self.out = nn.Linear(hidden_size, num_classes)
 
     def forward_step(self, input_, last_hidden, encoder_outputs):
         emb = self.emb(input_.transpose(0, 1)) # (1, batch, hidden)
-        # convert last hidden to (1, batch, hidden * 2)
-        attn = self.attention(
-            torch.cat((last_hidden[0], last_hidden[1]), dim=1).unsqueeze(0), 
-            encoder_outputs)  # (batch, 1, total pixels)
+        attn = self.attention(last_hidden, encoder_outputs)  # (batch, 1, total pixels)
         context = attn.bmm(encoder_outputs).transpose(0, 1)  # (1, batch, hidden)
         rnn_input = torch.cat((emb, context), dim=2) # (1, batch, hidden * 2)
-        outputs, hidden = self.rnn1(rnn_input, last_hidden) # (1, batch, hidden), (layers, batch, hidden)
+        outputs, hidden = self.rnn(rnn_input, last_hidden) # (1, batch, hidden), (layers, batch, hidden)
         outputs = self.out(outputs.contiguous().squeeze(0)).log_softmax(1) # (batch, vocab_size)
         return outputs, hidden
 
-    def forward(self, x = None, y = None, teacher_forcing_ratio = 0):
+    def init_hidden(self, batch_size):
+        return torch.zeros(1, batch_size, self.hidden_size).to(settings.DEVICE)
+    
+    def forward(self, x, y = None, teacher_forcing_ratio = 0):
         max_len = y.shape[1] - 1 if y is not None else self.max_len
+        
         # initial hidden state
-        hidden = torch.zeros(2, x.shape[0], x.shape[-1]).to(settings.DEVICE) # (layers, batch, hidden)
+        hidden = self.init_hidden(x.shape[0]) # (1, batch, hidden)
+
         # improve performance by flattenning the input
-        self.rnn1.flatten_parameters()
+        self.rnn.flatten_parameters()
 
         outputs = []
         # use teacher forcing
         if torch.rand(1).item() < teacher_forcing_ratio:
             for di in range(max_len):
                 # compute next output using encoder outputs, last predicted character, hidden state
-                output, hidden = self.forward_step(
-                    y[:, di].unsqueeze(1), hidden, x)
+                output, hidden = self.forward_step(y[:, di].unsqueeze(1), hidden, x)
                 # save output
                 outputs.append(output.squeeze(1))
         else:
             decoder_input = torch.tensor([settings.CHAR2IDX[settings.SOS]]).expand(x.shape[0], 1).to(settings.DEVICE)
             for di in range(max_len):
                 # compute next output using encoder outputs, last predicted character, hidden state
-                output, hidden = self.forward_step(
-                    decoder_input, hidden, x
-                )
+                output, hidden = self.forward_step(decoder_input, hidden, x)
                 # save output 
                 outputs.append(output.squeeze(1))
                 # update input 
@@ -100,19 +102,20 @@ class PositionEmbedding(nn.Module):
         return self.emb(input_)
 
 class AttentionDecoderOCR(nn.Module):
-    def __init__(self, hidden=256):
+    def __init__(self, img_w, img_h, max_len, hidden_size, num_classes):
         super(AttentionDecoderOCR, self).__init__()
-        self.cnn = FeatureExtractionCNN().to(settings.DEVICE)
+        # self.cnn = MyCNN().to(settings.DEVICE)
+        self.cnn = MyIncept().to(settings.DEVICE)
         # get the shape of feature output
-        b, fc, fh, fw = self.cnn(torch.randn(1, 3, settings.IMG_H, settings.IMG_W).to(settings.DEVICE)).shape
+        b, fc, fh, fw = self.cnn(torch.randn(1, 3, img_h, img_w).to(settings.DEVICE)).shape
         # vertical position embedding
         self.emb_i = PositionEmbedding(fh)
         # horizontal position embedding
         self.emb_j = PositionEmbedding(fw)
         # feature embedding
-        self.emb_f = nn.Linear(fh + fw + fc, hidden)
+        self.emb_f = nn.Linear(fh + fw + fc, hidden_size)
         # decoder 
-        self.decoder = Decoder(hidden)
+        self.decoder = Decoder(max_len, hidden_size, num_classes)
             
     def forward(self, x, y=None, teacher_forcing_ratio=0):
         # feature extraction
@@ -142,6 +145,6 @@ class AttentionDecoderOCR(nn.Module):
         # build embedded features with image features and positional embedding
         x = self.emb_f(x) # (b, fh * fw, hidden)
 
-        decoder_outputs = self.decoder(y=y, x=x, teacher_forcing_ratio=teacher_forcing_ratio) # (batch, seq_len, num_classes)
+        decoder_outputs = self.decoder(x=x, y=y, teacher_forcing_ratio=teacher_forcing_ratio) # (batch, seq_len, num_classes)
 
         return decoder_outputs

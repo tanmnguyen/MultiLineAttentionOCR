@@ -14,6 +14,12 @@ def get_model(arch: str):
     
     # Attention Decoder Neural Network
     if arch.upper() == "ATTDEC":
-        return AttentionDecoderOCR().to(settings.DEVICE), autoregressive_loss, autoregressive_decode
+        return AttentionDecoderOCR(
+            img_h=settings.IMG_H,
+            img_w=settings.IMG_W,
+            max_len=settings.MAX_LEN, 
+            hidden_size=512, 
+            num_classes=len(settings.CHAR2IDX)
+        ).to(settings.DEVICE), autoregressive_loss, autoregressive_decode
     
     raise ValueError(f"Invalid model architecture: {arch}")

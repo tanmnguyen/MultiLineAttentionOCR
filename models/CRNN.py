@@ -5,13 +5,13 @@ import torch
 import torch.nn as nn
 
 from settings import settings 
-from .FeatureExtractionCNN import FeatureExtractionCNN
+from .MyCNN import MyCNN
 
 class CRNN(nn.Module):
     def __init__(self):
         super(CRNN, self).__init__()
         # feature extraction
-        self.cnn = FeatureExtractionCNN().to(settings.DEVICE)
+        self.cnn = MyCNN().to(settings.DEVICE)
         b, fc, fh, fw = self.cnn(torch.randn(1, 3, settings.IMG_H, settings.IMG_W).to(settings.DEVICE)).shape
         # recurrent layers
         self.rnn1 = nn.LSTM(fh * fc, 64, 1, bidirectional=True)

@@ -1,9 +1,9 @@
 import torch 
 import torch.nn as nn
 
-class FeatureExtractionCNN(nn.Module):
+class MyCNN(nn.Module):
     def __init__(self):
-        super(FeatureExtractionCNN, self).__init__()
+        super(MyCNN, self).__init__()
         self.batch_norm1 = nn.BatchNorm2d(3)
         
         self.conv1 = nn.Conv2d(3, 32, kernel_size=3, padding=1)

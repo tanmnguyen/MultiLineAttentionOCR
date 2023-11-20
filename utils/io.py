@@ -27,9 +27,11 @@ def plot_learning_curve(history, title: str):
     plt.ylabel("Accuracy")
     plt.title(f"{title} - Accuracy")
     plt.legend()
+    plt.ylim(0, 1)  # Set the y-axis limits to ensure values between 0 and 1
 
     plt.tight_layout()
     plt.savefig(os.path.join(settings.SAVE_DIR, f"{title}.png"))
+    plt.close()
     
 
 def save_image_prediction(y_pred_str, y_true_str, img, img_path):
