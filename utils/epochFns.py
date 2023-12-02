@@ -19,6 +19,10 @@ def train(model, train_dataloader, optimizer, loss_fn, decode_fn, epoch, num_epo
             
         loss = loss_fn(y_pred, y_train)
 
+        if torch.isnan(loss):
+            print("Loss is NaN, ignoring")
+            continue
+        
         loss.backward()
         optimizer.step()
         
