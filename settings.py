@@ -35,5 +35,6 @@ class Settings:
         self.IDX2CHAR = {i : c for i, c in enumerate(self.LETTERS)}
 
 settings = Settings()
+settings.load_configuration("configs/default-config.cfg")
 
 
