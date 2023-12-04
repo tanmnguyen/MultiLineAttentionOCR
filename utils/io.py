@@ -33,7 +33,6 @@ def plot_learning_curve(history, title: str):
     plt.savefig(os.path.join(settings.SAVE_DIR, f"{title}.png"))
     plt.close()
     
-
 def save_image_prediction(y_pred_str, y_true_str, img, img_path):
     os.makedirs(settings.IMG_DIR, exist_ok=True)
     plt.imshow(np.uint8(img.permute(1,2,0).cpu().numpy()))
@@ -47,3 +46,9 @@ def log(contents, verbose=True):
             if verbose:
                 print(c)
             f.write(f"{c}\n")
+
+def show_prediction(img, prediction:str):
+    plt.figure(figsize=(3, 2))
+    plt.imshow(np.uint8(img.permute(1,2,0).cpu().numpy()))
+    plt.title(f"Pred: {prediction}")
+    plt.show()

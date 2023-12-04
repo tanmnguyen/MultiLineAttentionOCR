@@ -1,6 +1,7 @@
 import sys 
 sys.path.append("../")
 
+import torch 
 from models.CRNN import CRNN
 from models.AttentionDecoderOCR import AttentionDecoderOCR
 
