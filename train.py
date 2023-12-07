@@ -67,7 +67,7 @@ def main(args):
     except KeyboardInterrupt:
         pass 
 
-    print("Best Sequence Accuracy:", best_sequence_acc)
+    log([f"Best Sequence Accuracy: {best_sequence_acc}"])
 
     # plot learning curve
     plot_learning_curve(train_history, "train")
