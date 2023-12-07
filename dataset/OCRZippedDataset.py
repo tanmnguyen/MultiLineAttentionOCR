@@ -30,6 +30,7 @@ class OCRZippedDataset(Dataset):
 
         self.img_paths = img_paths
         self.lbls      = lbls
+        self.train     = False 
 
     def __len__(self):
         assert len(self.img_paths) == len(self.lbls)
@@ -41,7 +42,7 @@ class OCRZippedDataset(Dataset):
             img = cv2.imdecode(np.frombuffer(img_file.read(), np.uint8), cv2.IMREAD_COLOR)
             img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
 
-        if random.random() < 0.5:
+        if self.train and random.random() < 0.5:
             augmentation_fn = get_random_augmentation()
             img = augmentation_fn(img) 
 

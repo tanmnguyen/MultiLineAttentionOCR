@@ -21,6 +21,13 @@ def main(args):
     dataset = OCRZippedDataset(settings.DATA)
     train_ds, valid_ds = random_split(dataset, [0.9, 0.1])
 
+    train_ds.dataset.train = True
+    valid_ds.dataset.train = False
+
+    for i in range(len(valid_ds)):
+        train_ds[i]
+        continue 
+
     train_dataloader = DataLoader(
         train_ds, 
         batch_size=settings.BATCH_SIZE, 
