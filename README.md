@@ -18,7 +18,6 @@ This repository presents a Pytorch implementation of deep learning models for Op
     <em>Example of inference results on two-line and three-line Synthetic Captcha dataset.</em>
 </p>
 
-
 ## Installation
 Virtual environment is recommended to install this repo.
 1. Clone the repository. 

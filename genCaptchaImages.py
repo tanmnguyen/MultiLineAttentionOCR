@@ -21,6 +21,7 @@ def main(args):
     for i in tqdm(range(args.num)):
         contents = [randomize_content(lower_len=2, upper_len=5) for _ in range(args.lines)]
         joined_content = ''.join(contents)
+        
         # keep track of the captcha count for each content
         if joined_content not in capt_count:
             capt_count[joined_content] = 0 
@@ -36,7 +37,7 @@ def main(args):
 
         # save data 
         cv2.imwrite(os.path.join(CAPT_IMG_DIR, f"{filename}.png"), capt_img)
-        # capt_img.save(os.path.join(CAPT_IMG_DIR, f"{filename}.png"))
+
         with open(os.path.join(CAPT_IMG_DIR, f"{filename}.txt"), "w") as f:
             f.write(joined_content)
 
