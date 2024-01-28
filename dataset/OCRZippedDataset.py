@@ -45,5 +45,5 @@ class OCRZippedDataset(Dataset):
         if self.train and random.random() < 0.5:
             augmentation_fn = get_random_augmentation()
             img = augmentation_fn(img) 
-
+            
         return img, lbl, img_path
