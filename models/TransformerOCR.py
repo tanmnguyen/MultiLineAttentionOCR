@@ -29,7 +29,7 @@ class TransformerOCR(nn.Module):
         else:
             pred_list = []
             sos_token = torch.tensor([settings.CHAR2IDX[settings.SOS]]).expand(enc_emb.shape[0], 1).to(settings.DEVICE)
-g
+
             for _ in range(max_len):
                 logits = self.decoder(sos_token, enc_emb)
                 last_token_logits = logits[:, -1].unsqueeze(1)
