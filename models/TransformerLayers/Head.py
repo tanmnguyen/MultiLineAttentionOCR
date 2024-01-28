@@ -42,6 +42,7 @@ class Head(nn.Module):
 
         # (B, T, T)
         # Apply a mask to scores, making all scores above the diagonal -inf
+        # Do not apply mask for cross attention
         if enc_emb is None:
             mask = torch.tril(torch.ones(scores.shape[1], scores.shape[2])).to(settings.DEVICE)
             scores = scores * mask + torch.where(mask == 1, torch.tensor(0), torch.tensor(float('-inf')))

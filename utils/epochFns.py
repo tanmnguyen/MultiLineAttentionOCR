@@ -56,8 +56,8 @@ def valid(model, valid_dataloader, loss_fn, decode_fn, epoch, num_epochs):
         # for the purpose of testing, we will provide y train to the attention decoder model to ensure the 
         # sequence length is correct. 
         y_pred = model(x_valid.to(settings.DEVICE)) if isinstance(model, CRNN) else \
-                 model(x_valid.to(settings.DEVICE), y_valid.to(settings.DEVICE), teacher_forcing_ratio=0) 
-        
+                 model(x_valid.to(settings.DEVICE), torch.zeros_like(y_valid).to(settings.DEVICE), teacher_forcing_ratio=0) 
+
         loss = loss_fn(y_pred, y_valid) 
 
         with torch.no_grad():
@@ -87,7 +87,7 @@ def valid(model, valid_dataloader, loss_fn, decode_fn, epoch, num_epochs):
 def save_wrong_predictions(model, dataloader, decode_fn):
     for x_valid, y_valid, x_pth in tqdm(dataloader, leave=False):
         y_pred = model(x_valid.to(settings.DEVICE)) if isinstance(model, CRNN) else \
-                 model(x_valid.to(settings.DEVICE), y_valid.to(settings.DEVICE), teacher_forcing_ratio=0) 
+                 model(x_valid.to(settings.DEVICE), torch.zeros_like(y_valid).to(settings.DEVICE), teacher_forcing_ratio=0) 
 
         with torch.no_grad():
             y_pred = decode_fn(y_pred)

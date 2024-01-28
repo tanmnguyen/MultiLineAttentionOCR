@@ -10,7 +10,11 @@ from utils.selections import get_model
 
 def main(args):
     # load model 
-    model, _, decode_fn = get_model("attdec" if "attdec" in args.weight else "crnn")
+    model, _, decode_fn = get_model(
+        "attdec" if "attdec" in args.weight 
+        else "crnn" if "crnn" in args.weight 
+        else "GPT"
+    )
     model.load_state_dict(torch.load(args.weight, map_location=settings.DEVICE))
 
     # get input image 
